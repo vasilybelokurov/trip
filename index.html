@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trip</title>
+<style>
+  :root { --bg: #aaaaaa; --space: 8px; --width: 1100px; }
+  body { margin: 0; padding: 16px; background: var(--bg); color: #000;
+         font-family: Georgia, "Times New Roman", serif; text-align: center; }
+  nav { line-height: 1.7; max-width: 1100px; margin: 0 auto; }
+  nav a { color: #fff; text-decoration: none; margin: 0 .25em; white-space: nowrap; }
+  nav a:visited { color: #333; }
+  nav a.current { text-decoration: underline; }
+  h1 { font-weight: normal; font-size: 1.8em; margin: 1.2em 0 .6em; }
+  .grid { display: grid; gap: var(--space); padding: var(--space); background: #fff;
+          max-width: var(--width); margin: 1.5em auto; box-sizing: border-box;
+          grid-template-columns: repeat(var(--nx), 1fr); align-items: start; }
+  .grid img { display: block; width: 100%; height: auto; }
+  .single { display: inline-block; background: #fff; padding: 30px; margin: 1.5em auto 0;
+            max-width: calc(100% - 60px); box-sizing: content-box; }
+  .single img { display: block; max-width: 100%; height: auto; }
+  .caption { margin: 1.2em 0; }
+  .pager a { color: #fff; text-decoration: none; margin: 0 1em; }
+  @media (max-width: 700px) { .grid { grid-template-columns: repeat(min(var(--nx), 3), 1fr); } }
+</style>
+</head>
+<body>
+<nav id="menu"></nav>
+<main id="main"></main>
+<script src="manifest.js"></script>
+<script>
+(function () {
+  "use strict";
+  var TRIPS = window.TRIPS || {};
+  var q = new URLSearchParams(location.search);
+  var goto = q.get("goto") || "";
+  var menu = document.getElementById("menu");
+  var main = document.getElementById("main");
+
+  // outsane.php options: nx, space, width, shuffle, title, bgcolor
+  var bg = q.get("bgcolor");
+  if (bg && /^[0-9a-fA-F]{3,6}$/.test(bg)) document.documentElement.style.setProperty("--bg", "#" + bg);
+  var space = parseInt(q.get("space"), 10);
+  if (space >= 0 && space <= 100) document.documentElement.style.setProperty("--space", space + "px");
+  var width = parseInt(q.get("width"), 10);
+  if (width >= 200 && width <= 4000) document.documentElement.style.setProperty("--width", width + "px");
+  if (q.get("title")) document.title = q.get("title");
+
+  function el(tag, attrs, text) {
+    var e = document.createElement(tag);
+    for (var k in attrs || {}) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function link(path) { return "?goto=" + encodeURIComponent(path).replace(/%2F/g, "/"); }
+  function thumb(folder, file) { return "thumbs/" + folder + "/" + file.replace(/\.[^.]+$/, "") + ".jpg"; }
+
+  var folders = Object.keys(TRIPS).sort();
+  var parts = goto.split("/");
+  var folder = TRIPS[parts[0]] ? parts[0] : "";
+  var entry = null;
+  if (folder && parts.length === 2) {
+    entry = TRIPS[folder].filter(function (e) { return e[0] === parts[1]; })[0] || null;
+  }
+
+  // Menu
+  folders.forEach(function (f) {
+    var a = el("a", { href: link(f) }, f);
+    if (f === folder) a.className = "current";
+    menu.appendChild(a);
+    menu.appendChild(document.createTextNode(" "));
+  });
+  menu.appendChild(el("br"));
+  menu.appendChild(el("a", { href: "./" }, "All Trips"));
+
+  function grid(items, nx) {
+    var nxq = parseInt(q.get("nx"), 10);
+    if (nxq >= 1 && nxq <= 20) nx = nxq;
+    var g = el("div", { "class": "grid" });
+    g.style.setProperty("--nx", Math.max(1, Math.min(nx, items.length)));
+    items.forEach(function (it) {
+      var a = el("a", { href: link(it[0] + "/" + it[1][0]) });
+      a.appendChild(el("img", {
+        src: thumb(it[0], it[1][0]), alt: it[0] + "/" + it[1][0],
+        width: it[1][1], height: it[1][2], loading: "lazy"
+      }));
+      g.appendChild(a);
+    });
+    main.appendChild(g);
+  }
+
+  if (entry) {
+    // One image
+    var list = TRIPS[folder], i = list.indexOf(entry), path = folder + "/" + entry[0];
+    document.title = path;
+    var box = el("div", { "class": "single" });
+    var w = 900;
+    if (entry[2] > entry[1]) w = 0.85 * w * entry[1] / entry[2];
+    else if (entry[2] === entry[1]) w = 0.75 * w;
+    var img = el("img", { src: path, alt: path, width: entry[1], height: entry[2] });
+    img.style.width = Math.round(w) + "px";
+    box.appendChild(img);
+    main.appendChild(box);
+    var cap = el("div", { "class": "caption" }, path + ", ");
+    cap.appendChild(el("i", null, "oil, canvas, circa " + (1700 + Math.floor(Math.random() * 351))));
+    main.appendChild(cap);
+    var prev = list[(i - 1 + list.length) % list.length], next = list[(i + 1) % list.length];
+    var pager = el("div", { "class": "pager" });
+    pager.appendChild(el("a", { href: link(folder + "/" + prev[0]), id: "prev" }, "←"));
+    pager.appendChild(el("a", { href: link(folder) }, folder));
+    pager.appendChild(el("a", { href: link(folder + "/" + next[0]), id: "next" }, "→"));
+    main.appendChild(pager);
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "ArrowLeft") location.href = link(folder + "/" + prev[0]);
+      if (ev.key === "ArrowRight") location.href = link(folder + "/" + next[0]);
+      if (ev.key === "Escape") location.href = link(folder);
+    });
+  } else if (folder) {
+    // One folder
+    document.title = folder;
+    main.appendChild(el("h1", null, folder));
+    grid(TRIPS[folder].map(function (e) { return [folder, e]; }), 3);
+  } else {
+    // All trips, shuffled unless shuffle=0
+    var all = [];
+    folders.forEach(function (f) { TRIPS[f].forEach(function (e) { all.push([f, e]); }); });
+    if (q.get("shuffle") !== "0") {
+      for (var j = all.length - 1; j > 0; j--) {
+        var k = Math.floor(Math.random() * (j + 1)), t = all[j]; all[j] = all[k]; all[k] = t;
+      }
+    }
+    grid(all, 7);
+  }
+})();
+</script>
+</body>
+</html>
