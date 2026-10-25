@@ -114,7 +114,7 @@ and exist only in the published site.
 - Scans `<site dir>/<Trip>/*.{jpg,jpeg,png}`.
 - For each photo: applies the camera's EXIF orientation (so phone photos are upright),
   records the displayed width and height, and writes a JPEG thumbnail with longest side
-  480 px, quality 75, optimised and progressive. Thumbnails are about 20–60 KB.
+  480 px, quality 75, optimised and progressive. Thumbnails are 10–58 KB (median 35 KB, 9 MB for all 261).
 - Writes `manifest.js` as `window.TRIPS = {"Trip": [["file.jpg", width, height], …], …};`
   (a script rather than JSON, so the page also works opened straight from disk).
 - Never modifies the original photos.
@@ -172,8 +172,9 @@ python3 -m http.server 8000          # then open http://127.0.0.1:8000/
 | Site shows the old version | Pages may take a minute after the green tick; then Shift-reload. |
 | Warning "Node.js 20 is deprecated" in the log | Harmless notice from GitHub's own Pages actions; bump the action versions in `pages.yml` when newer ones are released. |
 
-Limits of GitHub Pages: published site up to 1 GB, soft bandwidth limit 100 GB/month,
-10 builds per hour. The gallery is about 150 MB.
+Limits of GitHub Pages: published site up to 1 GB, soft bandwidth limit 100 GB/month.
+The published gallery is about 145 MB (136 MB of photos plus 9 MB of thumbnails).
+Repo limits: 100 MB per file; keep the repo well under 1 GB.
 
 ---
 
