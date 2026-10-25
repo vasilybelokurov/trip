@@ -2,3 +2,4 @@
 thumbs/
 manifest.js
 _site/
+__pycache__/
