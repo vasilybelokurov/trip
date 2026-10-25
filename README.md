@@ -1,6 +1,6 @@
-# Trips
+# Trip
 
-Photo gallery, served by GitHub Pages at https://vasilybelokurov.github.io/trips/.
+Photo gallery, served by GitHub Pages at https://vasilybelokurov.github.io/trip/.
 Static replacement for the old `outsane.php` gallery.
 
 - One folder per trip, holding `.jpg`/`.jpeg`/`.png` photos.
